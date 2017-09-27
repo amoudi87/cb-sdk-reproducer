@@ -31,9 +31,9 @@ public class SporadicIllegalReferenceCountExceptionTest {
     private static final String NAME = "the westmann";
     private static final String BUCKET_NAME = "gbook_users";
     private static final boolean VERBOSE = false;
-    private static final int AWAIT_TIMEOUT_SECONDS = 90;
+    private static final int AWAIT_TIMEOUT_SECONDS = 100; // create admin user timeout
     private static final long LIMIT = 10000000L;
-    private static final long TIMEOUT = 10000L;
+    private static final long TIMEOUT = 100000L; // 100s kv operation timeout
     private static final KvStore kvStore = KvStore.SPOCK;
     private static final String cbUsername = "Administrator";
     private static final String cbPassword = "couchbase";
