@@ -1,0 +1,7 @@
+{ "policyno": "C123", "state": "CA", "zipcode": "96008", "make": "Honda", "accidents": [{ "year": "2015", "cost": 5000 }, {"year": "2016", "cost": 8000 }, {"year": "2016", "cost": 6000 }] }
+{ "policyno": "C124", "state": "CA", "zipcode": "96853", "make": "Ford", "accidents": [{ "year": "2015", "cost": 5000 }, {"year": "2015", "cost": 8000 }, {"year": "2016", "cost": 6000 }] }
+{ "policyno": "A123", "state": "AZ", "zipcode": "86008", "make": "Honda", "accidents": [{ "year": "2015", "cost": 5000 }, {"year": "2016", "cost": 8000 }, {"year": "2016", "cost": 6000 }] }
+{ "policyno": "A124", "state": "AZ", "zipcode": "86853", "make": "Ford", "accidents": [{ "year": "2015", "cost": 5000 }, {"year": "2016", "cost": 8000 }, {"year": "2016", "cost": 6000 }] }
+{ "policyno": "U123", "state": "UT", "zipcode": "66008", "make": "Honda", "accidents": [{ "year": "2015", "cost": 5000 }, {"year": "2016", "cost": 8000 }, {"year": "2016", "cost": 6000 }] }
+{ "policyno": "U124", "state": "UT", "zipcode": "66853", "make": "Ford", "accidents": [ ] }
+{ "policyno": "U125", "state": "UT", "zipcode": "66853", "make": "Ford" }
