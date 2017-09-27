@@ -33,6 +33,7 @@ public class SporadicIllegalReferenceCountExceptionTest {
     private static final String DCP_USERNAME = "till";
     private static final String NAME = "the westmann";
     private static final String BUCKET_NAME = "gbook_users";
+    private static final boolean VERBOSE = false;
     private static final int AWAIT_TIMEOUT_SECONDS = 90;
     private static final long LIMIT = 10000000L;
     private static final long TIMEOUT = 10000L;
@@ -67,9 +68,8 @@ public class SporadicIllegalReferenceCountExceptionTest {
         String cbUsername = "Administrator";
         String cbPassword = "couchbase";
         List<String> cbNodes = Arrays.asList("couchbase1.host,couchbase2.host,couchbase3.host".split(","));
-        boolean verbose = true;
         // Create loader
-        Loader cbLoader = new Loader(cbNodes, cbUsername, cbPassword, verbose, kvStore);
+        Loader cbLoader = new Loader(cbNodes, cbUsername, cbPassword, VERBOSE, kvStore);
         CouchbaseCluster cbCluster = cbLoader.getCluster();
         // Create user
         createAdmin(cbLoader, DCP_USERNAME, NAME, cbPassword);
@@ -82,7 +82,7 @@ public class SporadicIllegalReferenceCountExceptionTest {
         Loader.ID_NAMES.add("id");
         String[] files = { "src/test/resources/data/p1/gbook_users.json" };
         for (String file : files) {
-            cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT, verbose);
+            cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT, VERBOSE);
         }
         // add a binary doc
         cbLoader.upsertBinaryDocument(cbCluster, cbPassword, "binary", StandardCharsets.UTF_16.encode("Hello"),
@@ -91,7 +91,7 @@ public class SporadicIllegalReferenceCountExceptionTest {
         // Load more records
         files = new String[] { "src/test/resources/data/p2/gbook_users.json" };
         for (String file : files) {
-            cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT, verbose);
+            cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT, VERBOSE);
         }
         // Drop the bucket
         cbLoader.dropBucketIfExists(BUCKET_NAME);
