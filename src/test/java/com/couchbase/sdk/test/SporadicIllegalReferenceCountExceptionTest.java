@@ -29,7 +29,7 @@ import com.couchbase.client.java.cluster.User;
 @RunWith(Parameterized.class)
 public class SporadicIllegalReferenceCountExceptionTest {
 
-    private static final int REPREAT_TEST_COUNT = 10;
+    private static final int REPREAT_TEST_COUNT = 50;
     private static final String DCP_USERNAME = "till";
     private static final String NAME = "the westmann";
     private static final String BUCKET_NAME = "gbook_users";
