@@ -28,18 +28,14 @@ public class SporadicIllegalReferenceCountExceptionTest {
         // Call docker compose up. This will setup a 3 nodes spock cluster
         System.out.println("Starting test from (" + System.getProperty("user.dir") + ")");
         ProcessBuilder PB = new ProcessBuilder();
-        run(PB.command(
-                "/usr/local/bin/docker-compose -f /data/cb-sdk-reproducer/src/test/resources/docker/docker-compose.yml up -d")
-                .start());
+        run(PB.command("src/test/resources/scripts/docker-compose-up.sh").start());
 
         // We Ensure servers are up
         run(PB.command("src/test/resources/scripts/ensure-servers-up.sh").start());
         run(PB.command("src/test/resources/scripts/config-cluster.sh").start());
 
         // Teardown cluster
-        run(PB.command(
-                "/usr/local/bin/docker-compose -f /data/cb-sdk-reproducer/src/test/resources/docker/docker-compose.yml down")
-                .start());
+        run(PB.command("src/test/resources/scripts/docker-compose-down.sh").start());
     }
 
     private static String run(Process p) throws Exception {
