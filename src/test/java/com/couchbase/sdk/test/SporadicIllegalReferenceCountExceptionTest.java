@@ -14,8 +14,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -42,16 +42,8 @@ public class SporadicIllegalReferenceCountExceptionTest {
         return Arrays.asList(new Object[REPREAT_TEST_COUNT][0]);
     }
 
-    @BeforeClass
+    @Before
     public static void setUp() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDown() throws Exception {
-    }
-
-    @Test
-    public void test() throws Exception {
         // Call docker compose up. This will setup a 3 nodes spock cluster
         System.out.println("Starting test from (" + System.getProperty("user.dir") + ")");
         ProcessBuilder PB = new ProcessBuilder();
@@ -59,6 +51,17 @@ public class SporadicIllegalReferenceCountExceptionTest {
         // We Ensure servers are up
         System.out.println(run(PB.command("src/test/resources/scripts/ensure-servers-up.sh").start()));
         System.out.println(run(PB.command("src/test/resources/scripts/config-cluster.sh").start()));
+    }
+
+    @After
+    public static void tearDown() throws Exception {
+        // Teardown cluster
+        ProcessBuilder PB = new ProcessBuilder();
+        System.out.println(run(PB.command("src/test/resources/scripts/docker-compose-down.sh").start()));
+    }
+
+    @Test
+    public void test() throws Exception {
         // Set parameters
         KvStore kvStore = KvStore.SPOCK;
         String cbUsername = "Administrator";
@@ -90,12 +93,8 @@ public class SporadicIllegalReferenceCountExceptionTest {
         for (String file : files) {
             cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT, verbose);
         }
-
         // Drop the bucket
         cbLoader.dropBucketIfExists(BUCKET_NAME);
-
-        // Teardown cluster
-        System.out.println(run(PB.command("src/test/resources/scripts/docker-compose-down.sh").start()));
     }
 
     private static void createAdmin(Loader cbLoader, String username, String name, String password) {
