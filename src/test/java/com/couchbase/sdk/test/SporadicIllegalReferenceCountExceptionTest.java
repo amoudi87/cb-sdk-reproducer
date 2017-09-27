@@ -14,8 +14,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -37,14 +37,21 @@ public class SporadicIllegalReferenceCountExceptionTest {
     private static final int AWAIT_TIMEOUT_SECONDS = 90;
     private static final long LIMIT = 10000000L;
     private static final long TIMEOUT = 10000L;
+    private static final KvStore kvStore = KvStore.SPOCK;
+    private static final String cbUsername = "Administrator";
+    private static final String cbPassword = "couchbase";
+    private static final List<String> cbNodes =
+            Arrays.asList("couchbase1.host,couchbase2.host,couchbase3.host".split(","));
+    private static Loader cbLoader;
+    private static CouchbaseCluster cbCluster;
 
     @Parameterized.Parameters
     public static List<Object[]> data() {
         return Arrays.asList(new Object[REPREAT_TEST_COUNT][0]);
     }
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeClass
+    public static void setUp() throws Exception {
         // Call docker compose up. This will setup a 3 nodes spock cluster
         System.out.println("Starting test from (" + System.getProperty("user.dir") + ")");
         ProcessBuilder PB = new ProcessBuilder();
@@ -52,10 +59,15 @@ public class SporadicIllegalReferenceCountExceptionTest {
         // We Ensure servers are up
         System.out.println(run(PB.command("src/test/resources/scripts/ensure-servers-up.sh").start()));
         System.out.println(run(PB.command("src/test/resources/scripts/config-cluster.sh").start()));
+        // Create loader
+        cbLoader = new Loader(cbNodes, cbUsername, cbPassword, VERBOSE, kvStore);
+        cbCluster = cbLoader.getCluster();
+        // Create user
+        createAdmin(cbLoader, DCP_USERNAME, NAME, cbPassword);
     }
 
-    @After
-    public void tearDown() throws Exception {
+    @AfterClass
+    public static void tearDown() throws Exception {
         // Teardown cluster
         ProcessBuilder PB = new ProcessBuilder();
         System.out.println(run(PB.command("src/test/resources/scripts/docker-compose-down.sh").start()));
@@ -63,16 +75,6 @@ public class SporadicIllegalReferenceCountExceptionTest {
 
     @Test
     public void test() throws Exception {
-        // Set parameters
-        KvStore kvStore = KvStore.SPOCK;
-        String cbUsername = "Administrator";
-        String cbPassword = "couchbase";
-        List<String> cbNodes = Arrays.asList("couchbase1.host,couchbase2.host,couchbase3.host".split(","));
-        // Create loader
-        Loader cbLoader = new Loader(cbNodes, cbUsername, cbPassword, VERBOSE, kvStore);
-        CouchbaseCluster cbCluster = cbLoader.getCluster();
-        // Create user
-        createAdmin(cbLoader, DCP_USERNAME, NAME, cbPassword);
         // Drop bucket if exists
         cbLoader.dropBucketIfExists(BUCKET_NAME);
         // Create bucket
