@@ -1,0 +1,19 @@
+version: "2"
+services:
+  couchbase1.host:
+    image: couchbase/server:5.0.0-beta2
+    networks:
+      - cbnetwork
+
+  couchbase2.host:
+    image: couchbase/server:5.0.0-beta2
+    networks:
+      - cbnetwork
+
+  couchbase3.host:
+    image: couchbase/server:5.0.0-beta2
+    networks:
+      - cbnetwork
+
+networks:
+  cbnetwork:
