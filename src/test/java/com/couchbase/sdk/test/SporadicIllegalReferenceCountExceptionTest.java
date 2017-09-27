@@ -43,7 +43,7 @@ public class SporadicIllegalReferenceCountExceptionTest {
     }
 
     @Before
-    public static void setUp() throws Exception {
+    public void setUp() throws Exception {
         // Call docker compose up. This will setup a 3 nodes spock cluster
         System.out.println("Starting test from (" + System.getProperty("user.dir") + ")");
         ProcessBuilder PB = new ProcessBuilder();
@@ -54,7 +54,7 @@ public class SporadicIllegalReferenceCountExceptionTest {
     }
 
     @After
-    public static void tearDown() throws Exception {
+    public void tearDown() throws Exception {
         // Teardown cluster
         ProcessBuilder PB = new ProcessBuilder();
         System.out.println(run(PB.command("src/test/resources/scripts/docker-compose-down.sh").start()));
