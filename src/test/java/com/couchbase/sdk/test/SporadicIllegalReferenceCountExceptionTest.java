@@ -17,8 +17,6 @@ import org.apache.commons.io.IOUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import com.couchbase.analytics.test.util.KvStore;
 import com.couchbase.analytics.test.util.Loader;
@@ -26,10 +24,9 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseCluster;
 import com.couchbase.client.java.cluster.User;
 
-@RunWith(Parameterized.class)
 public class SporadicIllegalReferenceCountExceptionTest {
 
-    private static final int REPREAT_TEST_COUNT = 50;
+    private static final int REPREAT_TEST_COUNT = 100;
     private static final String DCP_USERNAME = "till";
     private static final String NAME = "the westmann";
     private static final String BUCKET_NAME = "gbook_users";
@@ -44,11 +41,6 @@ public class SporadicIllegalReferenceCountExceptionTest {
             Arrays.asList("couchbase1.host,couchbase2.host,couchbase3.host".split(","));
     private static Loader cbLoader;
     private static CouchbaseCluster cbCluster;
-
-    @Parameterized.Parameters
-    public static List<Object[]> data() {
-        return Arrays.asList(new Object[REPREAT_TEST_COUNT][0]);
-    }
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -75,28 +67,37 @@ public class SporadicIllegalReferenceCountExceptionTest {
 
     @Test
     public void test() throws Exception {
-        // Drop bucket if exists
-        cbLoader.dropBucketIfExists(BUCKET_NAME);
-        // Create bucket
-        cbLoader.createBucket(BUCKET_NAME, cbPassword, 128, 0, true);
-        // Load records
-        Loader.ID_NAMES.clear();
-        Loader.ID_NAMES.add("id");
-        String[] files = { "src/test/resources/data/p1/gbook_users.json" };
-        for (String file : files) {
-            cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT, VERBOSE);
-        }
-        // add a binary doc
-        cbLoader.upsertBinaryDocument(cbCluster, cbPassword, "binary", StandardCharsets.UTF_16.encode("Hello"),
-                BUCKET_NAME, TIMEOUT);
+        int i = 0;
+        try {
+            for (; i < REPREAT_TEST_COUNT; i++) {
+                // Drop bucket if exists
+                cbLoader.dropBucketIfExists(BUCKET_NAME);
+                // Create bucket
+                cbLoader.createBucket(BUCKET_NAME, cbPassword, 128, 0, true);
+                // Load records
+                Loader.ID_NAMES.clear();
+                Loader.ID_NAMES.add("id");
+                String[] files = { "src/test/resources/data/p1/gbook_users.json" };
+                for (String file : files) {
+                    cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT, VERBOSE);
+                }
+                // add a binary doc
+                cbLoader.upsertBinaryDocument(cbCluster, cbPassword, "binary", StandardCharsets.UTF_16.encode("Hello"),
+                        BUCKET_NAME, TIMEOUT);
 
-        // Load more records
-        files = new String[] { "src/test/resources/data/p2/gbook_users.json" };
-        for (String file : files) {
-            cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT, VERBOSE);
+                // Load more records
+                files = new String[] { "src/test/resources/data/p2/gbook_users.json" };
+                for (String file : files) {
+                    cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT, VERBOSE);
+                }
+                // Drop the bucket
+                cbLoader.dropBucketIfExists(BUCKET_NAME);
+            }
+        } finally {
+            if (i < REPREAT_TEST_COUNT) {
+                System.err.println("Succeeded " + i + " times before it fails");
+            }
         }
-        // Drop the bucket
-        cbLoader.dropBucketIfExists(BUCKET_NAME);
     }
 
     private static void createAdmin(Loader cbLoader, String username, String name, String password) {
