@@ -1,8 +1,10 @@
 #!/bin/bash
 
+docker network create docker_cbnetwork
+
 docker run \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  --network cbnetwork \
+  --network docker_cbnetwork \
   --name reproducer \
   -d amoudi/ubuntu-java tail -f /dev/null
 
