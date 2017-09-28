@@ -415,10 +415,15 @@ public class Loader {
             throws IOException, InterruptedException {
         boolean upserted = false;
         ByteBuf buf = Unpooled.wrappedBuffer(value);
-        BinaryDocument doc = BinaryDocument.create(key, buf);
-        MutableLong dynamicTimeout = new MutableLong(timeout);
-        while (!upserted) {
-            upserted = upsert(bucket, doc, dynamicTimeout);
+        try {
+            BinaryDocument doc = BinaryDocument.create(key, buf);
+            MutableLong dynamicTimeout = new MutableLong(timeout);
+            while (!upserted) {
+                buf.retain();
+                upserted = upsert(bucket, doc, dynamicTimeout);
+            }
+        } finally {
+            buf.release();
         }
     }
 
