@@ -217,7 +217,7 @@ public class Loader {
         try {
             bucket.upsert(doc, timeout.getValue(), TimeUnit.MILLISECONDS);
             return true;
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             if (e instanceof TemporaryFailureException || e.getCause() instanceof TimeoutException) {
                 final long oldTimeout = timeout.getValue();
                 final long newTimeout = oldTimeout * 2;
