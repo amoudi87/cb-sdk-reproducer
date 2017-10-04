@@ -14,6 +14,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -32,6 +34,7 @@ import com.couchbase.client.java.CouchbaseCluster;
 import com.couchbase.client.java.cluster.User;
 
 public class CreateUpsertDropTest {
+    private static final Logger LOGGER = Logger.getLogger(CreateUpsertDropTest.class.getName());
     private static final int REPREAT_TEST_COUNT = 100;
     private static final String DCP_USERNAME = "till";
     private static final String NAME = "the westmann";
@@ -52,12 +55,12 @@ public class CreateUpsertDropTest {
     @BeforeClass
     public static void setUp() throws Exception {
         // Call docker compose up. This will setup a 3 nodes spock cluster
-        System.out.println("Starting test from (" + System.getProperty("user.dir") + ")");
+        LOGGER.log(Level.WARNING, "Starting test from (" + System.getProperty("user.dir") + ")");
         ProcessBuilder PB = new ProcessBuilder();
-        System.out.println(run(PB.command("src/test/resources/scripts/docker-compose-up.sh").start()));
+        LOGGER.log(Level.WARNING, run(PB.command("src/test/resources/scripts/docker-compose-up.sh").start()));
         // We Ensure servers are up
-        System.out.println(run(PB.command("src/test/resources/scripts/ensure-servers-up.sh").start()));
-        System.out.println(run(PB.command("src/test/resources/scripts/config-cluster.sh").start()));
+        LOGGER.log(Level.WARNING, run(PB.command("src/test/resources/scripts/ensure-servers-up.sh").start()));
+        LOGGER.log(Level.WARNING, run(PB.command("src/test/resources/scripts/config-cluster.sh").start()));
         // Create loader
         cbLoader = new Loader(cbNodes, cbUsername, cbPassword, VERBOSE, kvStore);
         cbCluster = cbLoader.getCluster();
@@ -70,7 +73,7 @@ public class CreateUpsertDropTest {
     public static void tearDown() throws Exception {
         // Teardown cluster
         ProcessBuilder PB = new ProcessBuilder();
-        System.out.println(run(PB.command("src/test/resources/scripts/docker-compose-down.sh").start()));
+        LOGGER.log(Level.WARNING, run(PB.command("src/test/resources/scripts/docker-compose-down.sh").start()));
     }
 
     @Test
@@ -79,17 +82,21 @@ public class CreateUpsertDropTest {
         try {
             for (; i < REPREAT_TEST_COUNT; i++) {
                 // Drop bucket if exists
+                LOGGER.log(Level.WARNING, "dropping the bucket");
                 cbLoader.dropBucketIfExists(BUCKET_NAME);
                 //Ensure that bucket has been dropped
                 // <IP>:<PORT>/pools/default/buckets/<BUCKET_NAME> should return 404
                 int port = CBTestEnvironmentProvider.getEnvironment().bootstrapHttpDirectPort();
                 HttpTestUtils.request(cbNodes.get(0), port, "/pools/default/buckets/" + BUCKET_NAME,
                         response -> response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND, httpCtx);
+                LOGGER.log(Level.WARNING, "validation didn't find the bucket on kv node");
                 // Create bucket
+                LOGGER.log(Level.WARNING, "creating the bucket");
                 cbLoader.createBucket(BUCKET_NAME, cbPassword, 128, 0, true);
                 // Ensure that bucket has been created
                 HttpTestUtils.request(cbNodes.get(0), port, "/pools/default/buckets/" + BUCKET_NAME,
                         response -> response.getStatusLine().getStatusCode() == HttpStatus.SC_OK, httpCtx);
+                LOGGER.log(Level.WARNING, "validation found the bucket on kv node");
                 // Load records
                 Loader.ID_NAMES.clear();
                 Loader.ID_NAMES.add("id");
@@ -132,11 +139,11 @@ public class CreateUpsertDropTest {
                 // Ensure that bucket has been dropped
                 HttpTestUtils.request(cbNodes.get(0), port, "/pools/default/buckets/" + BUCKET_NAME,
                         response -> response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND, httpCtx);
-                System.out.println("====================================");
-                System.out.println("====================================");
-                System.out.println("Completed " + (i + 1) + " rounds successfully");
-                System.out.println("====================================");
-                System.out.println("====================================");
+                LOGGER.log(Level.WARNING, "====================================");
+                LOGGER.log(Level.WARNING, "====================================");
+                LOGGER.log(Level.WARNING, "Completed " + (i + 1) + " rounds successfully");
+                LOGGER.log(Level.WARNING, "====================================");
+                LOGGER.log(Level.WARNING, "====================================");
             }
         } finally {
             if (i < REPREAT_TEST_COUNT) {

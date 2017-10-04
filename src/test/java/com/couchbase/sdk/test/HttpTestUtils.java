@@ -13,8 +13,6 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.xml.bind.ValidationException;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpHost;
@@ -230,7 +228,7 @@ public class HttpTestUtils {
             try {
                 request(host, port, path, validator, ctx);
                 return;
-            } catch (ValidationException ve) {
+            } catch (ResponseValidationException ve) {
                 if (attempts == 0) {
                     throw ve;
                 }
