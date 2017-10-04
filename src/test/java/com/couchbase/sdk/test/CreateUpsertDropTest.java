@@ -133,7 +133,7 @@ public class CreateUpsertDropTest {
                                     return false;
                                 }
                             }
-                        }, httpCtx, 5, 1, TimeUnit.SECONDS);
+                        }, httpCtx, 20, 1, TimeUnit.SECONDS);
                 // Drop the bucket
                 cbLoader.dropBucketIfExists(BUCKET_NAME);
                 // Ensure that bucket has been dropped
