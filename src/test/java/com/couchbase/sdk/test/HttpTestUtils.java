@@ -223,7 +223,9 @@ public class HttpTestUtils {
     public static void poll(String host, int port, String path, Predicate<HttpResponse> validator,
             HttpClientContext ctx, int attempts, int waitBetweenAttempts, TimeUnit timeUnit) throws Exception {
         boolean succeeded = false;
+        int attempt = 0;
         while (!succeeded && attempts > 0) {
+            LOGGER.log(Level.WARNING, "Poll attempt#" + (++attempt));
             attempts--;
             try {
                 request(host, port, path, validator, ctx);
