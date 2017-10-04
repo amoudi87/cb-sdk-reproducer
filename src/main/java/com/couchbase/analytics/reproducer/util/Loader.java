@@ -1,7 +1,7 @@
 /*
  * Copyright 2016-2017 Couchbase, Inc.
  */
-package com.couchbase.analytics.test.util;
+package com.couchbase.analytics.reproducer.util;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -93,17 +93,18 @@ public class Loader {
         load(cluster, password, bucketname, flushBeforeLoad, file, limit, timeout, verbose);
     }
 
-    public void load(Cluster cluster, String password, String bucketName, boolean flushBeforeLoad, File file,
-            long limit, long timeout, boolean verbose) throws IOException, InterruptedException {
+    public int load(Cluster cluster, String password, String bucketName, boolean flushBeforeLoad, File file, long limit,
+            long timeout, boolean verbose) throws IOException, InterruptedException {
         Bucket bucket = kvStore == KvStore.SPOCK || password == null ? cluster.openBucket(bucketName)
                 : cluster.openBucket(bucketName, password);
         if (flushBeforeLoad && !bucket.bucketManager().flush()) {
             throw new IOException("Could not flush " + bucketName);
         }
-        parse(file, limit, bucket, verbose, timeout);
+        int upserted = parse(file, limit, bucket, verbose, timeout);
         if (!bucket.close()) {
             throw new IOException("Could not close " + bucketName);
         }
+        return upserted;
     }
 
     public List<String> getBuckets() {
@@ -128,7 +129,7 @@ public class Loader {
         LOGGER.log(result ? Level.INFO : Level.WARNING,
                 "Removal of bucket " + bucketName + " returned " + (result ? "successful" : "unsuccessful"));
         /*
-         * TODO(amoudi): per DCP team this hasBucket call is insuffient to determine complete removal
+         * TODO(amoudi): per SDK team this hasBucket call is insuffient to determine complete removal
          * For now, we will always wait 3 seconds. later, we can do something more involved.
          * Basically, we need to attempt to open the bucket and get an authentication failure
          */
@@ -170,11 +171,11 @@ public class Loader {
         }
     }
 
-    public void parse(File file, long limit, Bucket bucket, boolean verbose, long timeout)
+    public int parse(File file, long limit, Bucket bucket, boolean verbose, long timeout)
             throws IOException, InterruptedException {
         LOGGER.info("+++ load start (" + bucket.name() + ") +++");
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            long count = 0;
+            int count = 0;
             for (String line; (line = br.readLine()) != null;) {
                 if (++count > limit) {
                     break;
@@ -204,6 +205,7 @@ public class Loader {
                     }
                 }
             }
+            return count;
         } finally {
             LOGGER.info("+++ load end (" + bucket.name() + ") +++");
         }

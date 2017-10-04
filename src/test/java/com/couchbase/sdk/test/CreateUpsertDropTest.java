@@ -12,20 +12,26 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.couchbase.analytics.test.util.KvStore;
-import com.couchbase.analytics.test.util.Loader;
+import com.couchbase.analytics.reproducer.util.CBTestEnvironmentProvider;
+import com.couchbase.analytics.reproducer.util.KvStore;
+import com.couchbase.analytics.reproducer.util.Loader;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseCluster;
 import com.couchbase.client.java.cluster.User;
 
-public class SporadicIllegalReferenceCountExceptionTest {
-
+public class CreateUpsertDropTest {
     private static final int REPREAT_TEST_COUNT = 100;
     private static final String DCP_USERNAME = "till";
     private static final String NAME = "the westmann";
@@ -41,6 +47,7 @@ public class SporadicIllegalReferenceCountExceptionTest {
             Arrays.asList("couchbase1.host,couchbase2.host,couchbase3.host".split(","));
     private static Loader cbLoader;
     private static CouchbaseCluster cbCluster;
+    private static HttpClientContext httpCtx;
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -56,6 +63,7 @@ public class SporadicIllegalReferenceCountExceptionTest {
         cbCluster = cbLoader.getCluster();
         // Create user
         createAdmin(cbLoader, DCP_USERNAME, NAME, cbPassword);
+        httpCtx = HttpTestUtils.createBasicAuthHttpCtx(cbNodes, Pair.of(cbUsername, cbPassword));
     }
 
     @AfterClass
@@ -72,26 +80,63 @@ public class SporadicIllegalReferenceCountExceptionTest {
             for (; i < REPREAT_TEST_COUNT; i++) {
                 // Drop bucket if exists
                 cbLoader.dropBucketIfExists(BUCKET_NAME);
+                //Ensure that bucket has been dropped
+                // <IP>:<PORT>/pools/default/buckets/<BUCKET_NAME> should return 404
+                int port = CBTestEnvironmentProvider.getEnvironment().bootstrapHttpDirectPort();
+                HttpTestUtils.request(cbNodes.get(0), port, "/pools/default/buckets/" + BUCKET_NAME,
+                        response -> response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND, httpCtx);
                 // Create bucket
                 cbLoader.createBucket(BUCKET_NAME, cbPassword, 128, 0, true);
+                // Ensure that bucket has been created
+                HttpTestUtils.request(cbNodes.get(0), port, "/pools/default/buckets/" + BUCKET_NAME,
+                        response -> response.getStatusLine().getStatusCode() == HttpStatus.SC_OK, httpCtx);
                 // Load records
                 Loader.ID_NAMES.clear();
                 Loader.ID_NAMES.add("id");
                 String[] files = { "src/test/resources/data/p1/gbook_users.json" };
+                int total = 0;
                 for (String file : files) {
-                    cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT, VERBOSE);
+                    total += cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT,
+                            VERBOSE);
                 }
                 // add a binary doc
                 cbLoader.upsertBinaryDocument(cbCluster, cbPassword, "binary", StandardCharsets.UTF_16.encode("Hello"),
                         BUCKET_NAME, TIMEOUT);
-
+                total++;
                 // Load more records
                 files = new String[] { "src/test/resources/data/p2/gbook_users.json" };
                 for (String file : files) {
-                    cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT, VERBOSE);
+                    total += cbLoader.load(cbCluster, cbPassword, BUCKET_NAME, false, new File(file), LIMIT, TIMEOUT,
+                            VERBOSE);
                 }
+                // Poll bucket info for validation
+                final long roundTotal = total;
+                HttpTestUtils.poll(cbNodes.get(0), port, "/pools/default/buckets/" + BUCKET_NAME,
+                        new Predicate<HttpResponse>() {
+                            @Override
+                            public boolean test(HttpResponse response) {
+                                if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                                    return false;
+                                }
+                                try {
+                                    String json = HttpTestUtils.toString(response);
+                                    return HttpTestUtils.check(json, "basicStats.itemCount", roundTotal);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                    return false;
+                                }
+                            }
+                        }, httpCtx, 5, 1, TimeUnit.SECONDS);
                 // Drop the bucket
                 cbLoader.dropBucketIfExists(BUCKET_NAME);
+                // Ensure that bucket has been dropped
+                HttpTestUtils.request(cbNodes.get(0), port, "/pools/default/buckets/" + BUCKET_NAME,
+                        response -> response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND, httpCtx);
+                System.out.println("====================================");
+                System.out.println("====================================");
+                System.out.println("Completed " + (i + 1) + " rounds successfully");
+                System.out.println("====================================");
+                System.out.println("====================================");
             }
         } finally {
             if (i < REPREAT_TEST_COUNT) {

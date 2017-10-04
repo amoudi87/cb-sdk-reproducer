@@ -1,7 +1,7 @@
 /*
  * Copyright 2016-2017 Couchbase, Inc.
  */
-package com.couchbase.analytics.test.util;
+package com.couchbase.analytics.reproducer.util;
 
 import java.util.logging.Logger;
 
